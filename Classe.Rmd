@@ -1,0 +1,49 @@
+---
+title: "Classe machine learning"
+output: html_document
+---
+#1. Data overview and preprocessing
+
+```{r}
+library(caret)
+data=read.csv("pml-training.csv")
+data.test=read.csv("pml-testing.csv")
+```
+
+The training data consists of 19622 observations of 160 variables.
+I have managed to find the description of the overall data gathering and feature extraction process, as well as the actual paper presenting the results.
+However, what I couldn't find is the actuall codebook explaining what each of these variables means.
+Just looking at the data, I have managed to find out the following:
+1. The data consists of some sort of "time windows" sampled from persons performing excercise, and the number of time window is marked as num_window. 
+2. For each window, there are several observations of the variables (several rows). One observation for each num_window, marked as "new_window", contains overall characteristics of that window like mean(roll_belt), that are written in separate columns. All the other observations for that num_window only have NA's in those columns
+3. One num_window can only correspond to one specific "classe", so one num_window probably means one excercise repetition, or a time span within one exercise repetition. That means that the data from different rows for one num_window can be used together to predict "classe". 
+Test data set, however, doesnt contain any "new_window" observations; it also contains only one observation for each one num_window, which means, we will have to build a model that predicts classe for the observation based only on the data from that observation.
+  
+  The summaries like "mean(roll_belt)" become useless in this case, because test data set only has NA values for it. So it makes sense to simply delete them from the model, which is done by the following preprocess function:
+
+
+```{r, echo=FALSE}
+preprocess=function(tr){
+  I=NULL
+  for(i in 8:159){
+    tr[,i]=as.numeric(as.character(tr[,i]))
+    if(sum(is.na(tr[,i]))>0){
+     # print(i)
+      I=c(I,i)
+    } 
+  }
+  tr[is.na(tr)]=0
+  tr$new_window=as.character(tr$new_window) 
+  tr$new_window[tr$new_window=="yes"]=1 
+  tr$new_window[tr$new_window=="no"]=0         
+  
+  tr=tr[,-c(1:7,I)]
+  tr
+}
+tr=preprocess(data)
+```
+
+```{r,cache=TRUE}
+fit=train(classe~.,method="rf",data=tr)
+```
+
