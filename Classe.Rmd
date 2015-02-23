@@ -22,7 +22,7 @@ Test data set, however, doesnt contain any "new_window" observations; it also co
   The summaries like "mean(roll_belt)" become useless in this case, because test data set only has NA values for it. So it makes sense to simply delete them from the model, which is done by the following preprocess function:
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,warning=FALSE}
 preprocess=function(tr){
   I=NULL
   for(i in 8:159){
@@ -43,7 +43,37 @@ preprocess=function(tr){
 tr=preprocess(data)
 ```
 
+The first seven rows were also deleted.
+It can be argued that keeping extra information, like "subject name", can help model to achieve better results (at least on train data). However, since our ultimate goal is to be able to identify accuracy of exercise completion in completely new people, who haven't performed anything for our train set, it makes sense to delete those variables from the model.
+
+#2 Model building  
+We now run a standard "Random Forest" algorhytm to build our prediction model. 
+Note that we dont's use any data slicing (further dividing train data into train and test subsets) for our cross-validation, because Random Forest algorhytm makes that intrinsically - each new tree takes bootstrapped data out of the set, and uses data, that was not used in the training of the tree, as an error rate estimation the so-called "out of bag" (oob) error estimation, which is the same as cross-validation out-of-sample error estimation.
+
 ```{r,cache=TRUE}
 fit=train(classe~.,method="rf",data=tr)
 ```
+
+Let's now look at what have we got:  
+
+
+```{r}
+fit
+```  
+
+From the "oob" out-of-sample error estimation that was made intrinsically in random forest algorhytm, I think that my out-of-sample error rate will be no more than 2%.
+Let's use our model to predict "classe" for our test sample, and go home!
+
+```{r}
+te2=preprocess(data.test)
+pre=predict(fit,newdata = te2)
+
+```
+
+
+
+
+
+
+
 
